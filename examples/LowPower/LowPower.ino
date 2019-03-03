@@ -96,7 +96,7 @@ void loop()
 
   Serial.print(" Acceleration = ");
   //Read a register into the Acceleration variable.
-  if( myIMU.readRegisterInt16( &readData, LIS3DH_OUT_X_L ) != 0 )
+  if( myIMU.readRegister( &readData, LIS3DH_OUT_X_L ) != 0 )
   {
     errorsAndWarnings++;
   }
