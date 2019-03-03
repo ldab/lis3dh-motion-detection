@@ -4,11 +4,10 @@ Minimalistic library for motion detection using low cost ST LIS3DH, 3-axis MEMS 
 
 [![GitHub version](https://img.shields.io/github/release/ldab/lis3dh-motion-detection.svg)](https://github.com/ldab/lis3dh-motion-detection/releases/latest)
 [![Build Status](https://travis-ci.org/ldab/lis3dh-motion-detection.svg?branch=master)](https://travis-ci.org/ldab/lis3dh-motion-detection)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://github.com/ldab/lis3dh-motion-detection/blob/master/LICENSE)
 
 ![GitHub last commit](https://img.shields.io/github/last-commit/ldab/lis3dh-motion-detection.svg?style=social)
 
 ## 
-
-__
 
 Github Shields and Badges created with [Shields.io](https://github.com/badges/shields/)
