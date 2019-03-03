@@ -32,4 +32,4 @@ install:
     - platformio update
 
 script:
-    - platformio ci --lib="."
+    - platformio ci --lib="."--board=adafruit_trinket_m0
