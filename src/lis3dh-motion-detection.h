@@ -15,6 +15,10 @@ Distributed as-is; no warranty is given.
 #ifndef __LIS3DH_IMU_H__
 #define __LIS3DH_IMU_H__
 
+#if defined LOW_POWER && defined NORMAL_MODE && defined HIGH_RESOLUTION
+#error Please choose between the 3 resolution types
+#endif
+
 #include "stdint.h"
 
 // Return values 
@@ -29,13 +33,24 @@ typedef enum
 	//...
 } status_t;
 
+typedef enum
+{
+	DET_STOP,
+	DET_MOVE,
+	//...
+} event_t;
+
 class LIS3DH
 {
 public:
 	LIS3DH( uint8_t );
 	~LIS3DH() = default;
 	
-	status_t begin( void );
+	status_t begin( uint16_t accSample,
+					uint8_t xAcc,
+					uint8_t yAcc,
+					uint8_t zAcc,
+					uint8_t accSens );
 	
 	//The following utilities read and write to the IMU
 
@@ -53,37 +68,34 @@ public:
 	//Writes an 8-bit byte;
 	status_t writeRegister(uint8_t, uint8_t);
 
+	//Apply settings at .begin()
 	void applySettings( void );
+
+	//Configure Interrupts
+	// INT1 or 2, Move or Stop, 2,4,8 or 16g, duration cycles
+	status_t intConf(uint8_t interrupt,
+					event_t moveType, 
+					uint8_t threshold,
+					uint8_t timeDur);
 	
 private:
 	uint8_t I2CAddress;
-	uint8_t tempEnabled=1;
-	uint8_t adcEnabled=1;
-	uint8_t accelSampleRate=1; //Can be 1, 10, 25, 50, 100, 200, 400, 1600, 5000
-	uint8_t xAccelEnabled=1;
-	uint8_t yAccelEnabled=1;
-	uint8_t zAccelEnabled=1;
-	uint8_t accelRange=2; //Accelerometer range = 2, 4, 8, 16g
-
+	uint16_t accelSampleRate; //Can be 1, 10, 25, 50, 100, 200, 400, 1600, 5000
+	uint8_t xAccelEnabled;
+	uint8_t yAccelEnabled;
+	uint8_t zAccelEnabled;
+	uint8_t accelRange; //Accelerometer range = 2, 4, 8, 16g
 };
 
 //Device Registers
 #define LIS3DH_STATUS_REG_AUX         0x07
-#define LIS3DH_OUT_ADC1_L             0x08
-#define LIS3DH_OUT_ADC1_H             0x09
-#define LIS3DH_OUT_ADC2_L             0x0A
-#define LIS3DH_OUT_ADC2_H             0x0B
-#define LIS3DH_OUT_ADC3_L             0x0C
-#define LIS3DH_OUT_ADC3_H             0x0D
-#define LIS3DH_INT_COUNTER_REG        0x0E
 #define LIS3DH_WHO_AM_I               0x0F
 
-#define LIS3DH_TEMP_CFG_REG           0x1F
 #define LIS3DH_CTRL_REG1              0x20
 #define LIS3DH_CTRL_REG2              0x21
 #define LIS3DH_CTRL_REG3              0x22
 #define LIS3DH_CTRL_REG4              0x23
-#define LIS3DH_CTRL_REG5              0x24
+#define LIS3DH_CTRL_REG5              0x24 //not included
 #define LIS3DH_CTRL_REG6              0x25
 #define LIS3DH_REFERENCE              0x26
 #define LIS3DH_STATUS_REG2            0x27
@@ -99,6 +111,10 @@ private:
 #define LIS3DH_INT1_SRC               0x31
 #define LIS3DH_INT1_THS               0x32
 #define LIS3DH_INT1_DURATION          0x33
+#define LIS3DH_INT2_CFG               0x34
+#define LIS3DH_INT2_SRC               0x35
+#define LIS3DH_INT2_THS               0x36
+#define LIS3DH_INT2_DURATION          0x37
 
 #define LIS3DH_CLICK_CFG              0x38
 #define LIS3DH_CLICK_SRC              0x39

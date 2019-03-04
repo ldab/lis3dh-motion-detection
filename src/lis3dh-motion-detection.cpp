@@ -32,11 +32,15 @@ LIS3DH::LIS3DH( uint8_t inputArg )
   I2CAddress = inputArg;
 }
 
-status_t LIS3DH::begin(void)
+status_t LIS3DH::begin( uint16_t accSample,
+						uint8_t xAcc,
+						uint8_t yAcc,
+						uint8_t zAcc,
+						uint8_t accSens )
 {
 	status_t returnError = IMU_SUCCESS;
 
-  Wire.begin();
+  	Wire.begin();
   
 	//Spin for a few ms
 	volatile uint8_t temp = 0;
@@ -53,8 +57,15 @@ status_t LIS3DH::begin(void)
 		returnError = IMU_HW_ERROR;
 	}
 
-	return returnError;
+	accelSampleRate = accSample;
+	xAccelEnabled = xAcc;
+	yAccelEnabled = yAcc;
+	zAccelEnabled = zAcc;
+	accelRange = accSens;
 
+	applySettings();
+
+	return returnError;
 }
 
 //****************************************************************************//
@@ -182,29 +193,14 @@ status_t LIS3DH::writeRegister(uint8_t offset, uint8_t dataToWrite) {
 
 //****************************************************************************//
 //
-//  Configuration section
-//
-//  This uses the stored SensorSettings to start the IMU
-//  Use statements such as "myIMU.settings.commInterface = SPI_MODE;" or
-//  "myIMU.settings.accelEnabled = 1;" to configure before calling .begin();
+//  Apply settings passed to .begin();
 //
 //****************************************************************************//
 void LIS3DH::applySettings( void )
 {
 	uint8_t dataToWrite = 0;  //Temporary variable
-
-	//Build TEMP_CFG_REG
-	dataToWrite = 0; //Start Fresh!
-	dataToWrite = ((tempEnabled & 0x01) << 6) | ((adcEnabled & 0x01) << 7);
-	//Now, write the patched together data
-#ifdef VERBOSE_SERIAL
-	Serial.print("LIS3DH_TEMP_CFG_REG: 0x");
-	Serial.println(dataToWrite, HEX);
-#endif
-	writeRegister(LIS3DH_TEMP_CFG_REG, dataToWrite);
 	
 	//Build CTRL_REG1
-	dataToWrite = 0; //Start Fresh!
 	//  Convert ODR
 	switch(accelSampleRate)
 	{
@@ -238,6 +234,13 @@ void LIS3DH::applySettings( void )
 		break;
 	}
 	
+	// page 16 set CTRL_REG1[3](LPen bit)
+	#ifdef LOW_POWER
+		dataToWrite |= 0x08;
+	#else
+		dataToWrite |= 0xF7;
+	#endif
+
 	dataToWrite |= (zAccelEnabled & 0x01) << 2;
 	dataToWrite |= (yAccelEnabled & 0x01) << 1;
 	dataToWrite |= (xAccelEnabled & 0x01);
@@ -267,8 +270,14 @@ void LIS3DH::applySettings( void )
 		dataToWrite |= (0x03 << 4);
 		break;
 	}
-	dataToWrite |= 0x80; //set block update
+
+// page 16 set CTRL_REG4[3](HR bit)
+#ifdef HIGH_RESOLUTION
 	dataToWrite |= 0x08; //set high resolution
+#else
+	dataToWrite |= 0xF7; //CTRL_REG4[3](HR bit) to 0
+#endif
+
 #ifdef VERBOSE_SERIAL
 	Serial.print("LIS3DH_CTRL_REG4: 0x");
 	Serial.println(dataToWrite, HEX);
@@ -278,3 +287,52 @@ void LIS3DH::applySettings( void )
 
 }
 
+//****************************************************************************//
+//
+//  Configure interrupts 1 or 2, stop or move, threshold and duration
+//	Durationsteps and maximum values depend on the ODR chosen.
+//
+//****************************************************************************//
+status_t LIS3DH::intConf(uint8_t interrupt,
+						event_t moveType, 
+						uint8_t threshold,
+						uint8_t timeDur)
+{
+	uint8_t dataToWrite = 0;  //Temporary variable
+	status_t returnError = IMU_SUCCESS;
+
+	uint8_t regToWrite;
+	regToWrite = (interrupt==1) ? LIS3DH_INT1_CFG : LIS3DH_INT2_CFG;
+
+	//Build INT_CFG 0x30 or 0x34
+	//Detect movement or stop
+	if(moveType)	dataToWrite |= 0x2A;
+	else 			dataToWrite |= 0x15;
+
+	#ifdef VERBOSE_SERIAL
+		Serial.print("LIS3DH_INT_CFG: 0x");
+		Serial.println(dataToWrite, HEX);
+	#endif
+
+	returnError = writeRegister(regToWrite, dataToWrite);
+	
+	//Build INT_THS 0x32 or 0x36
+	regToWrite += 2;
+	returnError = writeRegister(regToWrite, threshold);
+
+	//Build INT_DURATION 0x33 or 0x37
+	regToWrite++;
+	returnError = writeRegister(regToWrite, timeDur);
+
+	//Attach configuration to Interrupt X
+	if(interrupt==1)
+	{
+		returnError = writeRegister(LIS3DH_CTRL_REG3, 0x40);
+	}
+	else
+	{
+		returnError = writeRegister(LIS3DH_CTRL_REG6, 0x20);
+	}
+	
+	return returnError;
+}

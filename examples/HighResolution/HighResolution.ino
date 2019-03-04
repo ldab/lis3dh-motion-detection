@@ -13,9 +13,9 @@ Distributed as-is; no warranty is given.
 ******************************************************************************/
 
 // Accelerometer provides different Power modes by changing output bit resolution
-#define LOW_POWER
+//#define LOW_POWER
 //#define NORMAL_MODE
-//#define HIGH_RESOLUTION
+#define HIGH_RESOLUTION
 
 #define VERBOSE_SERIAL
 
