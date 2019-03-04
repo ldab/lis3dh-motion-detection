@@ -14,9 +14,9 @@ Operating mode  | Turn-on time (ms) | @2g (mg/digit)
 ----------------|-------------------|----------------
 Low Power 8bits |1|16
 Normal Mode 10bits|1.6|4
-High Res 12bits|7/ODT|1
+High Res 12bits|7/ODD|1
 
-####  Current consumption of operating modes μA
+###  Current consumption of operating modes μA
 
 Operating mode (HZ) | Low Power | Normal Mode | High Resolution
 ----------------|-------------------|----------------|-----------
