@@ -25,12 +25,12 @@ Distributed as-is; no warranty is given.
 //  Default construction is I2C mode, address 0x19.
 //
 //****************************************************************************//
-LIS3DHCore::LIS3DHCore( uint8_t inputArg )
+LIS3DH::LIS3DH( uint8_t inputArg )
 {
   I2CAddress = inputArg;
 }
 
-status_t LIS3DHCore::beginCore(void)
+status_t LIS3DH::begin(void)
 {
 	status_t returnError = IMU_SUCCESS;
 
@@ -70,7 +70,7 @@ status_t LIS3DHCore::beginCore(void)
 //    other memory!
 //
 //****************************************************************************//
-status_t LIS3DHCore::readRegisterRegion(uint8_t *outputPointer , uint8_t offset, uint8_t length)
+status_t LIS3DH::readRegisterRegion(uint8_t *outputPointer , uint8_t offset, uint8_t length)
 {
 	status_t returnError = IMU_SUCCESS;
 
@@ -111,7 +111,7 @@ status_t LIS3DHCore::readRegisterRegion(uint8_t *outputPointer , uint8_t offset,
 //    offset -- register to read
 //
 //****************************************************************************//
-status_t LIS3DHCore::readRegister(uint8_t* outputPointer, uint8_t offset) {
+status_t LIS3DH::readRegister(uint8_t* outputPointer, uint8_t offset) {
 	//Return value
 	uint8_t result;
 	uint8_t numBytes = 1;
@@ -142,7 +142,7 @@ status_t LIS3DHCore::readRegister(uint8_t* outputPointer, uint8_t offset) {
 //    offset -- register to read
 //
 //****************************************************************************//
-status_t LIS3DHCore::readRegisterInt16( int16_t* outputPointer, uint8_t offset )
+status_t LIS3DH::readRegisterInt16( int16_t* outputPointer, uint8_t offset )
 {
 	{
 		//offset |= 0x80; //turn auto-increment bit on
@@ -164,7 +164,7 @@ status_t LIS3DHCore::readRegisterInt16( int16_t* outputPointer, uint8_t offset )
 //    dataToWrite -- 8 bit data to write to register
 //
 //****************************************************************************//
-status_t LIS3DHCore::writeRegister(uint8_t offset, uint8_t dataToWrite) {
+status_t LIS3DH::writeRegister(uint8_t offset, uint8_t dataToWrite) {
 	status_t returnError = IMU_SUCCESS;
 
   //Write the byte
@@ -176,57 +176,6 @@ status_t LIS3DHCore::writeRegister(uint8_t offset, uint8_t dataToWrite) {
     returnError = IMU_HW_ERROR;
   }
 
-	return returnError;
-}
-
-//****************************************************************************//
-//
-//  Main user class -- wrapper for the core class + maths
-//
-//  Construct with same rules as the core ( uint8_t busType, uint8_t inputArg )
-//
-//****************************************************************************//
-LIS3DH::LIS3DH( uint8_t inputArg ) : LIS3DHCore( inputArg )
-{
-	//Construct with these default settings
-	//ADC stuff
-	settings.adcEnabled = 1;
-	
-	//Temperature settings
-	settings.tempEnabled = 1;
-
-	//Accelerometer settings
-	settings.accelSampleRate = 50;  //Hz.  Can be: 0,1,10,25,50,100,200,400,1600,5000 Hz
-	settings.accelRange = 2;      //Max G force readable.  Can be: 2, 4, 8, 16
-
-	settings.xAccelEnabled = 1;
-	settings.yAccelEnabled = 1;
-	settings.zAccelEnabled = 1;
-
-	//FIFO control settings
-	settings.fifoEnabled = 0;
-	settings.fifoThreshold = 20;  //Can be 0 to 32
-	settings.fifoMode = 0;  //FIFO mode.
-  
-	allOnesCounter = 0;
-	nonSuccessCounter = 0;
-
-}
-
-//****************************************************************************//
-//
-//  Begin
-//
-//  This starts the lower level begin, then applies settings
-//
-//****************************************************************************//
-status_t LIS3DH::begin( void )
-{
-	//Begin the inherited core.  This gets the physical wires connected
-	status_t returnError = beginCore();
-
-	applySettings();
-	
 	return returnError;
 }
 
@@ -327,230 +276,4 @@ void LIS3DH::applySettings( void )
 	writeRegister(LIS3DH_CTRL_REG4, dataToWrite);
 
 }
-//****************************************************************************//
-//
-//  Accelerometer section
-//
-//****************************************************************************//
-int16_t LIS3DH::readRawAccelX( void )
-{
-	int16_t output;
-	status_t errorLevel = readRegisterInt16( &output, LIS3DH_OUT_X_L );
-	if( errorLevel != IMU_SUCCESS )
-	{
-		if( errorLevel == IMU_ALL_ONES_WARNING )
-		{
-			allOnesCounter++;
-		}
-		else
-		{
-			nonSuccessCounter++;
-		}
-	}
-	return output;
-}
-float LIS3DH::readFloatAccelX( void )
-{
-	float output = calcAccel(readRawAccelX());
-	return output;
-}
 
-int16_t LIS3DH::readRawAccelY( void )
-{
-	int16_t output;
-	status_t errorLevel = readRegisterInt16( &output, LIS3DH_OUT_Y_L );
-	if( errorLevel != IMU_SUCCESS )
-	{
-		if( errorLevel == IMU_ALL_ONES_WARNING )
-		{
-			allOnesCounter++;
-		}
-		else
-		{
-			nonSuccessCounter++;
-		}
-	}
-	return output;
-}
-
-float LIS3DH::readFloatAccelY( void )
-{
-	float output = calcAccel(readRawAccelY());
-	return output;
-}
-
-int16_t LIS3DH::readRawAccelZ( void )
-{
-	int16_t output;
-	status_t errorLevel = readRegisterInt16( &output, LIS3DH_OUT_Z_L );
-	if( errorLevel != IMU_SUCCESS )
-	{
-		if( errorLevel == IMU_ALL_ONES_WARNING )
-		{
-			allOnesCounter++;
-		}
-		else
-		{
-			nonSuccessCounter++;
-		}
-	}
-	return output;
-
-}
-
-float LIS3DH::readFloatAccelZ( void )
-{
-	float output = calcAccel(readRawAccelZ());
-	return output;
-}
-
-float LIS3DH::calcAccel( int16_t input )
-{
-	float output;
-	switch(settings.accelRange)
-	{
-		case 2:
-		output = (float)input / 15987;
-		break;
-		case 4:
-		output = (float)input / 7840;
-		break;
-		case 8:
-		output = (float)input / 3883;
-		break;
-		case 16:
-		output = (float)input / 1280;
-		break;
-		default:
-		output = 0;
-		break;
-	}
-	return output;
-}
-
-//****************************************************************************//
-//
-//  Accelerometer section
-//
-//****************************************************************************//
-uint16_t LIS3DH::read10bitADC1( void )
-{
-	int16_t intTemp;
-	uint16_t uintTemp;
-	readRegisterInt16( &intTemp, LIS3DH_OUT_ADC1_L );
-	intTemp = 0 - intTemp;
-	uintTemp = intTemp + 32768;
-	return uintTemp >> 6;
-}
-
-uint16_t LIS3DH::read10bitADC2( void )
-{
-	int16_t intTemp;
-	uint16_t uintTemp;
-	readRegisterInt16( &intTemp, LIS3DH_OUT_ADC2_L );
-	intTemp = 0 - intTemp;
-	uintTemp = intTemp + 32768;
-	return uintTemp >> 6;
-}
-
-uint16_t LIS3DH::read10bitADC3( void )
-{
-	int16_t intTemp;
-	uint16_t uintTemp;
-	readRegisterInt16( &intTemp, LIS3DH_OUT_ADC3_L );
-	intTemp = 0 - intTemp;
-	uintTemp = intTemp + 32768;
-	return uintTemp >> 6;
-}
-
-//****************************************************************************//
-//
-//  FIFO section
-//
-//****************************************************************************//
-void LIS3DH::fifoBegin( void )
-{
-	uint8_t dataToWrite = 0;  //Temporary variable
-
-	//Build LIS3DH_FIFO_CTRL_REG
-	readRegister( &dataToWrite, LIS3DH_FIFO_CTRL_REG ); //Start with existing data
-	dataToWrite &= 0x20;//clear all but bit 5
-	dataToWrite |= (settings.fifoMode & 0x03) << 6; //apply mode
-	dataToWrite |= (settings.fifoThreshold & 0x1F); //apply threshold
-	//Now, write the patched together data
-#ifdef VERBOSE_SERIAL
-	Serial.print("LIS3DH_FIFO_CTRL_REG: 0x");
-	Serial.println(dataToWrite, HEX);
-#endif
-	writeRegister(LIS3DH_FIFO_CTRL_REG, dataToWrite);
-
-	//Build CTRL_REG5
-	readRegister( &dataToWrite, LIS3DH_CTRL_REG5 ); //Start with existing data
-	dataToWrite &= 0xBF;//clear bit 6
-	dataToWrite |= (settings.fifoEnabled & 0x01) << 6;
-	//Now, write the patched together data
-#ifdef VERBOSE_SERIAL
-	Serial.print("LIS3DH_CTRL_REG5: 0x");
-	Serial.println(dataToWrite, HEX);
-#endif
-	writeRegister(LIS3DH_CTRL_REG5, dataToWrite);
-}
-
-void LIS3DH::fifoClear( void ) {
-	//Drain the fifo data and dump it
-	while( (fifoGetStatus() & 0x20 ) == 0 ) {
-		readRawAccelX();
-		readRawAccelY();
-		readRawAccelZ();
-	}
-}
-
-void LIS3DH::fifoStartRec( void )
-{
-	uint8_t dataToWrite = 0;  //Temporary variable
-	
-	//Turn off...
-	readRegister( &dataToWrite, LIS3DH_FIFO_CTRL_REG ); //Start with existing data
-	dataToWrite &= 0x3F;//clear mode
-#ifdef VERBOSE_SERIAL
-	Serial.print("LIS3DH_FIFO_CTRL_REG: 0x");
-	Serial.println(dataToWrite, HEX);
-#endif
-	writeRegister(LIS3DH_FIFO_CTRL_REG, dataToWrite);	
-	//  ... then back on again
-	readRegister( &dataToWrite, LIS3DH_FIFO_CTRL_REG ); //Start with existing data
-	dataToWrite &= 0x3F;//clear mode
-	dataToWrite |= (settings.fifoMode & 0x03) << 6; //apply mode
-	//Now, write the patched together data
-#ifdef VERBOSE_SERIAL
-	Serial.print("LIS3DH_FIFO_CTRL_REG: 0x");
-	Serial.println(dataToWrite, HEX);
-#endif
-	writeRegister(LIS3DH_FIFO_CTRL_REG, dataToWrite);
-}
-
-uint8_t LIS3DH::fifoGetStatus( void )
-{
-	//Return some data on the state of the fifo
-	uint8_t tempReadByte = 0;
-	readRegister(&tempReadByte, LIS3DH_FIFO_SRC_REG);
-#ifdef VERBOSE_SERIAL
-	Serial.print("LIS3DH_FIFO_SRC_REG: 0x");
-	Serial.println(tempReadByte, HEX);
-#endif
-	return tempReadByte;  
-}
-
-void LIS3DH::fifoEnd( void )
-{
-	uint8_t dataToWrite = 0;  //Temporary variable
-
-	//Turn off...
-	readRegister( &dataToWrite, LIS3DH_FIFO_CTRL_REG ); //Start with existing data
-	dataToWrite &= 0x3F;//clear mode
-#ifdef VERBOSE_SERIAL
-	Serial.print("LIS3DH_FIFO_CTRL_REG: 0x");
-	Serial.println(dataToWrite, HEX);
-#endif
-	writeRegister(LIS3DH_FIFO_CTRL_REG, dataToWrite);	
-}

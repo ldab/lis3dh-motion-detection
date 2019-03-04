@@ -22,13 +22,13 @@ void setup() {
   Serial.begin(115200);
   delay(1000); //wait until serial is open...
   
-  if( myIMU.beginCore() != 0 )
+  if( myIMU.begin() != 0 )
   {
-    Serial.print("Error at beginCore().\n");
+    Serial.print("Error at begin().\n");
   }
   else
   {
-    Serial.print("\nbeginCore() passed.\n");
+    Serial.print("\nbegin() passed.\n");
   }
   
 //Setup the accelerometer******************************

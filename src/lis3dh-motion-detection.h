@@ -27,18 +27,13 @@ typedef enum
 	//...
 } status_t;
 
-//This is the core operational class of the driver.
-//  LIS3DHCore contains only read and write operations towards the IMU.
-//  To use the higher level functions, use the class LIS3DH which inherits
-//  this class.
-
-class LIS3DHCore
+class LIS3DH
 {
 public:
-	LIS3DHCore( uint8_t );
-	~LIS3DHCore() = default;
+	LIS3DH( uint8_t );
+	~LIS3DH() = default;
 	
-	status_t beginCore( void );
+	status_t begin( void );
 	
 	//The following utilities read and write to the IMU
 
@@ -57,85 +52,7 @@ public:
 	status_t writeRegister(uint8_t, uint8_t);
 	
 private:
-	//Communication stuff
 	uint8_t I2CAddress;
-	uint8_t chipSelectPin;
-};
-
-//This struct holds the settings the driver uses to do calculations
-struct SensorSettings
-{
-public:
-	//ADC and Temperature settings
-	uint8_t adcEnabled;
-	uint8_t tempEnabled;
-
-	//Accelerometer settings
-	uint16_t accelSampleRate;  //Hz.  Can be: 0,1,10,25,50,100,200,400,1600,5000 Hz
-	uint8_t accelRange;      //Max G force readable.  Can be: 2, 4, 8, 16
-
-	uint8_t xAccelEnabled;
-	uint8_t yAccelEnabled;
-	uint8_t zAccelEnabled;
-	
-	//Fifo settings
-	uint8_t fifoEnabled;
-	uint8_t fifoMode; //can be 0x0,0x1,0x2,0x3
-	uint8_t fifoThreshold;
-};
-
-
-//This is the highest level class of the driver.
-//
-//  class LIS3DH inherits the core and makes use of the beginCore()
-//method through it's own begin() method.  It also contains the
-//settings struct to hold user settings.
-
-class LIS3DH : public LIS3DHCore
-{
-public:
-	//IMU settings
-	SensorSettings settings;
-	
-	//Error checking
-	uint16_t allOnesCounter;
-	uint16_t nonSuccessCounter;
-
-	//Constructor generates default SensorSettings.
-	//(over-ride after construction if desired)
-	LIS3DH( uint8_t inputArg = 0x19 );
-	//~LIS3DH() = default;
-	
-	//Call to apply SensorSettings
-	status_t begin( void );
-	void applySettings( void );
-
-	//Returns the raw bits from the sensor cast as 16-bit signed integers
-	int16_t readRawAccelX( void );
-	int16_t readRawAccelY( void );
-	int16_t readRawAccelZ( void );
-
-	//Returns the values as floats.  Inside, this calls readRaw___();
-	float readFloatAccelX( void );
-	float readFloatAccelY( void );
-	float readFloatAccelZ( void );
-
-	//ADC related calls
-	uint16_t read10bitADC1( void );
-	uint16_t read10bitADC2( void );
-	uint16_t read10bitADC3( void );
-	
-	//FIFO stuff
-	void fifoBegin( void );
-	void fifoClear( void );
-	uint8_t fifoGetStatus( void );
-	void fifoStartRec();
-	void fifoEnd( void );
-	
-	float calcAccel( int16_t );
-	
-private:
-
 };
 
 //Device Registers

@@ -8,6 +8,8 @@ Minimalistic library for motion detection using low cost ST LIS3DH, 3-axis MEMS 
 
 ![GitHub last commit](https://img.shields.io/github/last-commit/ldab/lis3dh-motion-detection.svg?style=social)
 
-## 
+## Credits
+
+Inspired by [SparkFun LIS3DH Arduino Library](https://github.com/sparkfun/SparkFun_LIS3DH_Arduino_Library)
 
 Github Shields and Badges created with [Shields.io](https://github.com/badges/shields/)
