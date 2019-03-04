@@ -8,6 +8,11 @@ Minimalistic library for motion detection using low cost ST LIS3DH, 3-axis MEMS 
 
 ![GitHub last commit](https://img.shields.io/github/last-commit/ldab/lis3dh-motion-detection.svg?style=social)
 
+## TODO
+
+- [ ] Implement better debug handler
+- [ ] Add Filter options
+
 ## Low Power configuration
 
 Operating mode  | Turn-on time (ms) | @2g (mg/digit)  
@@ -29,6 +34,29 @@ Operating mode (HZ) | Low Power | Normal Mode | High Resolution
 400|36|73|73
 1344||185|185
 1620|100||
+
+## Interrupt Threshold
+
+Interrupt threshold sensitivity is directly proportional to the Full Scale 2, 4, 8 or 16g chosen:
+
+<This value can be anything from 1 to 127>
+
+16 mg @ FS = ±2 g
+32 mg @ FS = ±4 g
+62 mg @ FS = ±8 g
+186 mg @ FS = ±16 g
+
+## REG2 Filters
+
+TODO
+
+## REG3 Interrupt 1
+
+TODO
+
+## REG6 Interrupt 2
+
+TODO
 
 ## Credits
 
