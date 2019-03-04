@@ -7,6 +7,8 @@ https://github.com/ldab/lis3dh-motion-detection
 Resources:
 Uses Wire.h for i2c operation
 
+Inspired by https://github.com/sparkfun/SparkFun_LIS3DH_Arduino_Library
+
 Distributed as-is; no warranty is given.
 ******************************************************************************/
 
@@ -77,7 +79,6 @@ status_t LIS3DH::readRegisterRegion(uint8_t *outputPointer , uint8_t offset, uin
 	//define pointer that will point to the external space
 	uint8_t i = 0;
 	uint8_t c = 0;
-	uint8_t tempFFCounter = 0;
 
   Wire.beginTransmission(I2CAddress);
   offset |= 0x80; //turn auto-increment bit on, bit 7 for I2C

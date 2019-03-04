@@ -7,6 +7,8 @@ https://github.com/ldab/lis3dh-motion-detection
 Resources:
 Uses Wire.h for i2c operation
 
+Inspired by https://github.com/sparkfun/SparkFun_LIS3DH_Arduino_Library
+
 Distributed as-is; no warranty is given.
 ******************************************************************************/
 

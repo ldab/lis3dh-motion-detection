@@ -7,6 +7,8 @@ https://github.com/ldab/lis3dh-motion-detection
 Resources:
 Uses Wire.h for i2c operation
 
+Inspired by https://github.com/sparkfun/SparkFun_LIS3DH_Arduino_Library
+
 Distributed as-is; no warranty is given.
 ******************************************************************************/
 
@@ -50,6 +52,8 @@ public:
 	
 	//Writes an 8-bit byte;
 	status_t writeRegister(uint8_t, uint8_t);
+
+	void applySettings( void );
 	
 private:
 	uint8_t I2CAddress;
