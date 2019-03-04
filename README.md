@@ -50,14 +50,6 @@ Interrupt threshold sensitivity is directly proportional to the Full Scale 2, 4,
 
 TODO
 
-## REG3 Interrupt 1
-
-TODO
-
-## REG6 Interrupt 2
-
-TODO
-
 ## Credits
 
 Inspired by [SparkFun LIS3DH Arduino Library](https://github.com/sparkfun/SparkFun_LIS3DH_Arduino_Library)
