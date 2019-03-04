@@ -57,6 +57,14 @@ public:
 	
 private:
 	uint8_t I2CAddress;
+	uint8_t tempEnabled=1;
+	uint8_t adcEnabled=1;
+	uint8_t accelSampleRate=1; //Can be 1, 10, 25, 50, 100, 200, 400, 1600, 5000
+	uint8_t xAccelEnabled=1,
+	uint8_t yAccelEnabled=1,
+	uint8_t zAccelEnabled=1,
+	uint8_t accelRange=2, //Accelerometer range = 2, 4, 8, 16g
+
 };
 
 //Device Registers

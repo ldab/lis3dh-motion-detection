@@ -195,7 +195,7 @@ void LIS3DH::applySettings( void )
 
 	//Build TEMP_CFG_REG
 	dataToWrite = 0; //Start Fresh!
-	dataToWrite = ((settings.tempEnabled & 0x01) << 6) | ((settings.adcEnabled & 0x01) << 7);
+	dataToWrite = ((tempEnabled & 0x01) << 6) | ((adcEnabled & 0x01) << 7);
 	//Now, write the patched together data
 #ifdef VERBOSE_SERIAL
 	Serial.print("LIS3DH_TEMP_CFG_REG: 0x");
@@ -206,7 +206,7 @@ void LIS3DH::applySettings( void )
 	//Build CTRL_REG1
 	dataToWrite = 0; //Start Fresh!
 	//  Convert ODR
-	switch(settings.accelSampleRate)
+	switch(accelSampleRate)
 	{
 		case 1:
 		dataToWrite |= (0x01 << 4);
@@ -238,9 +238,9 @@ void LIS3DH::applySettings( void )
 		break;
 	}
 	
-	dataToWrite |= (settings.zAccelEnabled & 0x01) << 2;
-	dataToWrite |= (settings.yAccelEnabled & 0x01) << 1;
-	dataToWrite |= (settings.xAccelEnabled & 0x01);
+	dataToWrite |= (zAccelEnabled & 0x01) << 2;
+	dataToWrite |= (yAccelEnabled & 0x01) << 1;
+	dataToWrite |= (xAccelEnabled & 0x01);
 	//Now, write the patched together data
 #ifdef VERBOSE_SERIAL
 	Serial.print("LIS3DH_CTRL_REG1: 0x");
@@ -251,7 +251,7 @@ void LIS3DH::applySettings( void )
 	//Build CTRL_REG4
 	dataToWrite = 0; //Start Fresh!
 	//  Convert scaling
-	switch(settings.accelRange)
+	switch(accelRange)
 	{
 		case 2:
 		dataToWrite |= (0x00 << 4);
