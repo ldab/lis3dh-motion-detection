@@ -39,12 +39,12 @@ Operating mode (HZ) | Low Power | Normal Mode | High Resolution
 
 Interrupt threshold sensitivity is directly proportional to the Full Scale 2, 4, 8 or 16g chosen:
 
-<This value can be anything from 1 to 127>
+> This value can be anything from 1 to 127
 
-16 mg @ FS = ±2 g
-32 mg @ FS = ±4 g
-62 mg @ FS = ±8 g
-186 mg @ FS = ±16 g
+* 16 mg @ FS = ±2 g
+* 32 mg @ FS = ±4 g
+* 62 mg @ FS = ±8 g
+* 186 mg @ FS = ±16 g
 
 ## REG2 Filters
 
