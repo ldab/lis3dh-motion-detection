@@ -10,7 +10,7 @@ Minimalistic library for motion detection using low cost ST LIS3DH, 3-axis MEMS 
 
 ## TODO
 
-- [ ] Implement better debug handler
+- [x] Implement better debug handler
 - [ ] Add Filter options
 
 ## Low Power configuration

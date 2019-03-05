@@ -245,10 +245,8 @@ void LIS3DH::applySettings( void )
 	dataToWrite |= (yAccelEnabled & 0x01) << 1;
 	dataToWrite |= (xAccelEnabled & 0x01);
 	//Now, write the patched together data
-#ifdef VERBOSE_SERIAL
-	Serial.print("LIS3DH_CTRL_REG1: 0x");
-	Serial.println(dataToWrite, HEX);
-#endif
+	DBG ("LIS3DH_CTRL_REG1: 0x", (dataToWrite,HEX));
+
 	writeRegister(LIS3DH_CTRL_REG1, dataToWrite);
 
 	//Build CTRL_REG4
@@ -278,11 +276,8 @@ void LIS3DH::applySettings( void )
 	dataToWrite |= 0xF7; //CTRL_REG4[3](HR bit) to 0
 #endif
 
-#ifdef VERBOSE_SERIAL
-	Serial.print("LIS3DH_CTRL_REG4: 0x");
-	Serial.println(dataToWrite, HEX);
-#endif
 	//Now, write the patched together data
+	DBG ("LIS3DH_CTRL_REG4: 0x", (dataToWrite, HEX));
 	writeRegister(LIS3DH_CTRL_REG4, dataToWrite);
 
 }
@@ -309,11 +304,7 @@ status_t LIS3DH::intConf(uint8_t interrupt,
 	if(moveType)	dataToWrite |= 0x2A;
 	else 			dataToWrite |= 0x15;
 
-	#ifdef VERBOSE_SERIAL
-		Serial.print("LIS3DH_INT_CFG: 0x");
-		Serial.println(dataToWrite, HEX);
-	#endif
-
+	DBG ("LIS3DH_INT_CFG: 0x", (dataToWrite,HEX));
 	returnError = writeRegister(regToWrite, dataToWrite);
 	
 	//Build INT_THS 0x32 or 0x36

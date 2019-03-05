@@ -17,7 +17,8 @@ Distributed as-is; no warranty is given.
 //#define NORMAL_MODE
 //#define HIGH_RESOLUTION
 
-#define VERBOSE_SERIAL
+//Enable Serial debbug on Serial UART to see registers wrote
+#define SERIAL_DEBUG Serial
 
 #include "lis3dh-motion-detection.h"
 #include "Wire.h"

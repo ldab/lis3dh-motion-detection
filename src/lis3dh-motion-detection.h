@@ -15,11 +15,33 @@ Distributed as-is; no warranty is given.
 #ifndef __LIS3DH_IMU_H__
 #define __LIS3DH_IMU_H__
 
-#if defined LOW_POWER && defined NORMAL_MODE && defined HIGH_RESOLUTION
-#error Please choose between the 3 resolution types
+#include "stdint.h"
+
+#if defined LOW_POWER && defined NORMAL_MODE
+	#error Please choose between the 3 resolution types
+#elif defined NORMAL_MODE && defined HIGH_RESOLUTION
+	#error Please choose between the 3 resolution types
+#elif defined LOW_POWER && defined HIGH_RESOLUTION
+	#error Please choose between the 3 resolution types
 #endif
 
-#include "stdint.h"
+#ifdef SERIAL_DEBUG
+	namespace {
+  		template<typename T>
+  		static void DBG(T last) {
+    	SERIAL_DEBUG.println(last);
+		}
+		
+		template<typename T, typename... Args>
+		static void DBG(T head, Args... tail) {
+			SERIAL_DEBUG.print(head);
+			SERIAL_DEBUG.print(' ');
+			DBG(tail...);
+		}
+	}
+#else
+  	#define DBG(...)
+#endif
 
 // Return values 
 typedef enum
