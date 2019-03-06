@@ -129,20 +129,22 @@ status_t LIS3DH::readRegister(uint8_t* outputPointer, uint8_t offset) {
 	uint8_t numBytes = 1;
 	status_t returnError = IMU_SUCCESS;
 
-  Wire.beginTransmission(I2CAddress);
-  Wire.write(offset);
-  if( Wire.endTransmission() != 0 )
-  {
-    returnError = IMU_HW_ERROR;
-  }
-  Wire.requestFrom(I2CAddress, numBytes);
-  while ( Wire.available() ) // slave may send less than requested
-  {
-    result = Wire.read(); // receive a byte as a proper uint8_t
-  }
+	Wire.beginTransmission(I2CAddress);
+	Wire.write(offset);
+	if( Wire.endTransmission() != 0 )
+	{
+		returnError = IMU_HW_ERROR;
+	}
+	Wire.requestFrom(I2CAddress, numBytes);
+	while ( Wire.available() ) // slave may send less than requested
+	{
+		result = Wire.read(); // receive a byte as a proper uint8_t
+	}
 
-	*outputPointer = result;
-	return returnError;
+		DBG("Read register 0x", (offset, HEX), " = ", (result, BIN));
+
+		*outputPointer = result;
+		return returnError;
 }
 
 //****************************************************************************//
@@ -161,6 +163,8 @@ status_t LIS3DH::readRegisterInt16( int16_t* outputPointer, uint8_t offset )
 		uint8_t myBuffer[2];
 		status_t returnError = readRegisterRegion(myBuffer, offset, 2);  //Does memory transfer
 		int16_t output = (int16_t)myBuffer[0] | int16_t(myBuffer[1] << 8);
+
+		DBG("12 bit from 0x", (offset, HEX), " = ", output);
 		*outputPointer = output;
 		return returnError;
 	}
@@ -245,7 +249,7 @@ void LIS3DH::applySettings( void )
 	dataToWrite |= (yAccelEnabled & 0x01) << 1;
 	dataToWrite |= (xAccelEnabled & 0x01);
 	//Now, write the patched together data
-	DBG ("LIS3DH_CTRL_REG1: 0x", (dataToWrite,HEX));
+	DBG ("LIS3DH_CTRL_REG1: 0x", (dataToWrite, HEX));
 
 	writeRegister(LIS3DH_CTRL_REG1, dataToWrite);
 
@@ -253,7 +257,8 @@ void LIS3DH::applySettings( void )
 	dataToWrite = 0; //Start Fresh!
 	//  Convert scaling
 	switch(accelRange)
-	{
+	{	
+		default:
 		case 2:
 		dataToWrite |= (0x00 << 4);
 		break;
@@ -263,7 +268,6 @@ void LIS3DH::applySettings( void )
 		case 8:
 		dataToWrite |= (0x02 << 4);
 		break;
-		default:
 		case 16:
 		dataToWrite |= (0x03 << 4);
 		break;
@@ -288,7 +292,7 @@ void LIS3DH::applySettings( void )
 //	Durationsteps and maximum values depend on the ODR chosen.
 //
 //****************************************************************************//
-status_t LIS3DH::intConf(uint8_t interrupt,
+status_t LIS3DH::intConf(interrupt_t interrupt,
 						event_t moveType, 
 						uint8_t threshold,
 						uint8_t timeDur)
@@ -304,7 +308,7 @@ status_t LIS3DH::intConf(uint8_t interrupt,
 	if(moveType)	dataToWrite |= 0x2A;
 	else 			dataToWrite |= 0x15;
 
-	DBG ("LIS3DH_INT_CFG: 0x", (dataToWrite,HEX));
+	DBG ("LIS3DH_INT_CFG: 0x", (dataToWrite, HEX));
 	returnError = writeRegister(regToWrite, dataToWrite);
 	
 	//Build INT_THS 0x32 or 0x36
@@ -313,6 +317,8 @@ status_t LIS3DH::intConf(uint8_t interrupt,
 
 	//Build INT_DURATION 0x33 or 0x37
 	regToWrite++;
+	float _seconds = float(timeDur/accelSampleRate);
+	DBG ("Event Duration is: ", (_seconds,2), "sec");
 	returnError = writeRegister(regToWrite, timeDur);
 
 	//Attach configuration to Interrupt X

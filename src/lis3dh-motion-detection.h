@@ -43,6 +43,9 @@ Distributed as-is; no warranty is given.
   	#define DBG(...)
 #endif
 
+//Print variable name
+#define getName(var)  #var
+
 // Return values 
 typedef enum
 {
@@ -61,6 +64,12 @@ typedef enum
 	DET_MOVE,
 	//...
 } event_t;
+
+typedef enum
+{
+	INT1 = 1,
+	INT2,
+} interrupt_t;
 
 class LIS3DH
 {
@@ -94,8 +103,8 @@ public:
 	void applySettings( void );
 
 	//Configure Interrupts
-	// INT1 or 2, Move or Stop, 2,4,8 or 16g, duration cycles
-	status_t intConf(uint8_t interrupt,
+	// INT1 or 2, Move or Stop, Detection Sensivity and duration cycles = from 1 to 127
+	status_t intConf(interrupt_t interrupt,
 					event_t moveType, 
 					uint8_t threshold,
 					uint8_t timeDur);
