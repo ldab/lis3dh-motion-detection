@@ -32,4 +32,4 @@ install:
     - platformio update
 
 script:
-    - platformio ci --lib="." --board=adafruit_trinket_m0, espressif8266
+    - platformio ci --lib="." --board=adafruit_trinket_m0 --board=espressif8266
