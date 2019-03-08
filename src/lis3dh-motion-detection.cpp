@@ -125,7 +125,7 @@ status_t LIS3DH::readRegisterRegion(uint8_t *outputPointer , uint8_t offset, uin
 //****************************************************************************//
 status_t LIS3DH::readRegister(uint8_t* outputPointer, uint8_t offset) {
 	//Return value
-	uint8_t result;
+	uint8_t result = 0;
 	uint8_t numBytes = 1;
 	status_t returnError = IMU_SUCCESS;
 
@@ -301,12 +301,12 @@ status_t LIS3DH::intConf(interrupt_t interrupt,
 	status_t returnError = IMU_SUCCESS;
 
 	uint8_t regToWrite;
-	regToWrite = (interrupt==1) ? LIS3DH_INT1_CFG : LIS3DH_INT2_CFG;
+	regToWrite = (interrupt==INT_1) ? LIS3DH_INT1_CFG : LIS3DH_INT2_CFG;
 
 	//Build INT_CFG 0x30 or 0x34
 	//Detect movement or stop
 	if(moveType)	dataToWrite |= 0x2A;
-	else 			dataToWrite |= 0x15;
+	else 					dataToWrite |= 0x15;
 
 	DBG ("LIS3DH_INT_CFG: 0x", (dataToWrite, HEX));
 	returnError = writeRegister(regToWrite, dataToWrite);
@@ -317,8 +317,9 @@ status_t LIS3DH::intConf(interrupt_t interrupt,
 
 	//Build INT_DURATION 0x33 or 0x37
 	regToWrite++;
-	float _seconds = float(timeDur/accelSampleRate);
-	DBG ("Event Duration is: ", (_seconds,2), "sec");
+	//float _seconds = 0;
+	//_seconds = timeDur/1.0f/accelSampleRate;
+	DBG ("Event Duration is: ", (timeDur/1.0f/accelSampleRate,2), "sec");
 	returnError = writeRegister(regToWrite, timeDur);
 
 	//Attach configuration to Interrupt X
