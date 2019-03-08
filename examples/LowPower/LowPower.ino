@@ -44,8 +44,8 @@ void setup() {
   //Detection threshold can be from 1 to 127 and depends on the Range
   //chosen above, change it and test accordingly to your application
   //Duration = timeDur x Seconds / sampleRate
-  myIMU.intConf(INT1, DET_MOVE, 50, 5);
-  myIMU.intConf(INT2, DET_STOP, 50, 30);
+  myIMU.intConf(INT_1, DET_MOVE, 50, 5);
+  myIMU.intConf(INT_2, DET_STOP, 50, 30);
 
   uint8_t readData = 0;
 

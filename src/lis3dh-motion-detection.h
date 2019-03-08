@@ -17,6 +17,12 @@ Distributed as-is; no warranty is given.
 
 #include "stdint.h"
 
+#if defined(ARDUINO) && ARDUINO >= 100
+    #include "Arduino.h"
+#else
+    #include "WProgram.h"
+#endif
+
 #if defined LOW_POWER && defined NORMAL_MODE
 	#error Please choose between the 3 resolution types
 #elif defined NORMAL_MODE && defined HIGH_RESOLUTION
@@ -67,8 +73,8 @@ typedef enum
 
 typedef enum
 {
-	INT1 = 1,
-	INT2,
+	INT_1 = 1,
+	INT_2,
 } interrupt_t;
 
 class LIS3DH
