@@ -19,11 +19,6 @@ Distributed as-is; no warranty is given.
 
 //****************************************************************************//
 //
-//  LIS3DHCore functions.
-//
-//  Construction arguments:
-//  ( uint8_t inputArg ),
-//
 //  Default construction is I2C mode, address 0x19.
 //
 //****************************************************************************//
@@ -38,6 +33,9 @@ status_t LIS3DH::begin( uint16_t accSample,
 						uint8_t zAcc,
 						uint8_t accSens )
 {
+
+	_DEBBUG("Configuring IMU");
+
 	status_t returnError = IMU_SUCCESS;
 
   	Wire.begin();
@@ -63,6 +61,7 @@ status_t LIS3DH::begin( uint16_t accSample,
 	zAccelEnabled = zAcc;
 	accelRange = accSens;
 
+	_DEBBUG("Apply settings");
 	applySettings();
 
 	return returnError;
@@ -141,7 +140,7 @@ status_t LIS3DH::readRegister(uint8_t* outputPointer, uint8_t offset) {
 		result = Wire.read(); // receive a byte as a proper uint8_t
 	}
 
-		DBG("Read register 0x", (offset, HEX), " = ", (result, BIN));
+		_DEBBUG("Read register 0x", offset, " = ", result);
 
 		*outputPointer = result;
 		return returnError;
@@ -164,7 +163,7 @@ status_t LIS3DH::readRegisterInt16( int16_t* outputPointer, uint8_t offset )
 		status_t returnError = readRegisterRegion(myBuffer, offset, 2);  //Does memory transfer
 		int16_t output = (int16_t)myBuffer[0] | int16_t(myBuffer[1] << 8);
 
-		DBG("12 bit from 0x", (offset, HEX), " = ", output);
+		_DEBBUG("12 bit from 0x", offset, " = ", output);
 		*outputPointer = output;
 		return returnError;
 	}
@@ -195,6 +194,59 @@ status_t LIS3DH::writeRegister(uint8_t offset, uint8_t dataToWrite) {
 	return returnError;
 }
 
+// Read axis acceleration as Float
+float LIS3DH::axisAccel( axis_t _axis)
+{
+	int16_t outRAW;
+	uint8_t regToRead = 0;
+	switch (_axis)
+	{
+		case 0:
+			// X axis
+			regToRead = LIS3DH_OUT_X_L;
+			break;
+		case 1:
+			// Y axis
+			regToRead = LIS3DH_OUT_Y_L;
+			break;
+		case 2:
+			// Z axis
+			regToRead = LIS3DH_OUT_Z_L;
+			break;
+	
+		default:
+			// Not valid axis return NAN
+			return NAN;
+			break;
+	}
+
+	readRegisterInt16( &outRAW, regToRead );
+
+	float outFloat;
+
+	switch( accelRange )
+	{
+		case 2:
+		outFloat = (float)outRAW / 15987;
+		break;
+		case 4:
+		outFloat = (float)outRAW / 7840;
+		break;
+		case 8:
+		outFloat = (float)outRAW / 3883;
+		break;
+		case 16:
+		outFloat = (float)outRAW / 1280;
+		break;
+		default:
+		outFloat = 0;
+		break;
+	}
+
+	return outFloat;
+
+}
+
 //****************************************************************************//
 //
 //  Apply settings passed to .begin();
@@ -205,6 +257,12 @@ void LIS3DH::applySettings( void )
 	uint8_t dataToWrite = 0;  //Temporary variable
 	
 	//Build CTRL_REG1
+
+	// page 16 set CTRL_REG1[3](LPen bit)
+	#ifdef LOW_POWER
+		dataToWrite |= 0x08;
+	#endif
+
 	//  Convert ODR
 	switch(accelSampleRate)
 	{
@@ -237,24 +295,23 @@ void LIS3DH::applySettings( void )
 		dataToWrite |= (0x09 << 4);
 		break;
 	}
-	
-	// page 16 set CTRL_REG1[3](LPen bit)
-	#ifdef LOW_POWER
-		dataToWrite |= 0x08;
-	#else
-		dataToWrite |= 0xF7;
-	#endif
 
 	dataToWrite |= (zAccelEnabled & 0x01) << 2;
 	dataToWrite |= (yAccelEnabled & 0x01) << 1;
 	dataToWrite |= (xAccelEnabled & 0x01);
 	//Now, write the patched together data
-	DBG ("LIS3DH_CTRL_REG1: 0x", (dataToWrite, HEX));
+	_DEBBUG ("LIS3DH_CTRL_REG1: 0x", dataToWrite);
 
 	writeRegister(LIS3DH_CTRL_REG1, dataToWrite);
 
 	//Build CTRL_REG4
 	dataToWrite = 0; //Start Fresh!
+	
+	// page 16 set CTRL_REG4[3](HR bit)
+#ifdef HIGH_RESOLUTION
+	dataToWrite |= 0x08; //set high resolution
+#endif
+
 	//  Convert scaling
 	switch(accelRange)
 	{	
@@ -273,15 +330,8 @@ void LIS3DH::applySettings( void )
 		break;
 	}
 
-// page 16 set CTRL_REG4[3](HR bit)
-#ifdef HIGH_RESOLUTION
-	dataToWrite |= 0x08; //set high resolution
-#else
-	dataToWrite |= 0xF7; //CTRL_REG4[3](HR bit) to 0
-#endif
-
 	//Now, write the patched together data
-	DBG ("LIS3DH_CTRL_REG4: 0x", (dataToWrite, HEX));
+	_DEBBUG ("LIS3DH_CTRL_REG4: 0x", dataToWrite);
 	writeRegister(LIS3DH_CTRL_REG4, dataToWrite);
 
 }
@@ -300,15 +350,15 @@ status_t LIS3DH::intConf(interrupt_t interrupt,
 	uint8_t dataToWrite = 0;  //Temporary variable
 	status_t returnError = IMU_SUCCESS;
 
-	uint8_t regToWrite;
-	regToWrite = (interrupt==INT_1) ? LIS3DH_INT1_CFG : LIS3DH_INT2_CFG;
+	uint8_t regToWrite = 0;
+	regToWrite = (interrupt == INT_1) ? LIS3DH_INT1_CFG : LIS3DH_INT2_CFG;
 
 	//Build INT_CFG 0x30 or 0x34
 	//Detect movement or stop
-	if(moveType)	dataToWrite |= 0x2A;
-	else 					dataToWrite |= 0x15;
+	if(moveType == 1)	dataToWrite |= 0x0A;
+	else 							dataToWrite |= 0x05;
 
-	DBG ("LIS3DH_INT_CFG: 0x", (dataToWrite, HEX));
+	_DEBBUG ("LIS3DH_INT_CFG: 0x", dataToWrite);
 	returnError = writeRegister(regToWrite, dataToWrite);
 	
 	//Build INT_THS 0x32 or 0x36
@@ -317,13 +367,14 @@ status_t LIS3DH::intConf(interrupt_t interrupt,
 
 	//Build INT_DURATION 0x33 or 0x37
 	regToWrite++;
-	//float _seconds = 0;
-	//_seconds = timeDur/1.0f/accelSampleRate;
-	DBG ("Event Duration is: ", (timeDur/1.0f/accelSampleRate,2), "sec");
+
+	float _seconds = float(timeDur/1.0f/accelSampleRate);
+	_DEBBUG ("Event Duration is: ", _seconds, "sec");
+
 	returnError = writeRegister(regToWrite, timeDur);
 
 	//Attach configuration to Interrupt X
-	if(interrupt==1)
+	if(interrupt == 1)
 	{
 		returnError = writeRegister(LIS3DH_CTRL_REG3, 0x40);
 	}

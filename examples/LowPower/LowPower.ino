@@ -17,14 +17,14 @@ Distributed as-is; no warranty is given.
 //#define NORMAL_MODE
 //#define HIGH_RESOLUTION
 
-//Enable Serial debbug on Serial UART to see registers wrote
-#define SERIAL_DEBUG Serial
+// Enable Serial debbug on Serial UART to see registers wrote
+#define LIS3DH_DEBUG Serial
 
 #include "lis3dh-motion-detection.h"
 #include "Wire.h"
 
-uint16_t sampleRate = 1; //HZ - Samples per second - 1, 10, 25, 50, 100, 200, 400, 1600, 5000
-uint8_t accelRange = 2; //Accelerometer range = 2, 4, 8, 16g
+uint16_t sampleRate = 1;  // HZ - Samples per second - 1, 10, 25, 50, 100, 200, 400, 1600, 5000
+uint8_t accelRange = 2;   // Accelerometer range = 2, 4, 8, 16g
 
 uint16_t errorsAndWarnings = 0;
 
@@ -40,52 +40,54 @@ void setup() {
   {
     Serial.print("Failed to initialize IMU.\n");
   }
+  else
+  {
+    Serial.print("IMU initialized.\n");
+  }
   
   //Detection threshold can be from 1 to 127 and depends on the Range
   //chosen above, change it and test accordingly to your application
   //Duration = timeDur x Seconds / sampleRate
-  myIMU.intConf(INT_1, DET_MOVE, 50, 5);
-  myIMU.intConf(INT_2, DET_STOP, 50, 30);
+  myIMU.intConf(INT_1, DET_MOVE, 13, 2);
+  myIMU.intConf(INT_2, DET_STOP, 13, 10);
 
   uint8_t readData = 0;
 
-  //Confirm configuration:
+  // Confirm configuration:
   myIMU.readRegister(&readData, LIS3DH_INT1_CFG);
   myIMU.readRegister(&readData, LIS3DH_INT2_CFG);
 
-//	dataToWrite = 0x40; //
-//	//errorsAndWarnings += myIMU.writeRegister(LIS3DH_REFERENCE, dataToWrite);
-
-  //Get the ID:
-  Serial.println("Who am I?");
+  // Get the ID:
   myIMU.readRegister(&readData, LIS3DH_WHO_AM_I);
+  Serial.print("Who am I? 0x");
+  Serial.println(readData, HEX);
 
 }
 
 
 void loop()
 {
-  uint8_t readData = 0;
-
-  Serial.print(" Acceleration X = ");
-  //Read a register into the Acceleration variable.
-  if( myIMU.readRegister( &readData, LIS3DH_OUT_X_L ) != 0 )
-  {
-    errorsAndWarnings++;
-  }
 
   int16_t dataHighres = 0;
 
-  Serial.print(" Acceleration X high res = ");
-  //Read a register into the Acceleration variable.
   if( myIMU.readRegisterInt16( &dataHighres, LIS3DH_OUT_X_L ) != 0 )
   {
     errorsAndWarnings++;
   }
-  
-  Serial.println();
-  Serial.print("Total reported Errors and Warnings: ");
-  Serial.println(errorsAndWarnings);
+  Serial.print(" Acceleration X RAW = ");
+  Serial.println(dataHighres);
+
+  if( myIMU.readRegisterInt16( &dataHighres, LIS3DH_OUT_Z_L ) != 0 )
+  {
+    errorsAndWarnings++;
+  }
+  Serial.print(" Acceleration Z RAW = ");
+  Serial.println(dataHighres);
+
+  // Read accelerometer data in mg as Float
+  Serial.print(" Acceleration Z float = ");
+  Serial.println( myIMU.axisAccel( Z ), 4);
 
   delay(1000);
+
 }
