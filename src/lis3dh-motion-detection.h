@@ -31,6 +31,8 @@ Distributed as-is; no warranty is given.
 	#error Please choose between the 3 resolution types
 #endif
 
+//#define LIS3DH_DEBUG
+
 #ifdef LIS3DH_DEBUG
 	namespace {
   		template<typename T>
@@ -68,12 +70,13 @@ typedef enum
 {
 	DET_STOP,
 	DET_MOVE,
-	//...
+	BIKE_FALL,
 } event_t;
 
 typedef enum
 {
-	INT_1 = 1,
+	INT_0,
+	INT_1,
 	INT_2,
 } interrupt_t;
 
@@ -110,12 +113,22 @@ public:
 	// Configure Interrupts
 	// INT1 or 2, Move or Stop, Detection Sensivity and duration cycles = from 1 to 127
 	status_t intConf(interrupt_t interrupt,
-					event_t moveType, 
-					uint8_t threshold,
-					uint8_t timeDur);
+					event_t moveType = DET_MOVE,
+					uint8_t threshold = 13,
+					uint8_t timeDur = 2,
+					bool polarity = 0);
 	
 	// Read axis acceleration as Float
 	float axisAccel( axis_t _axis);
+	uint8_t readTap();
+	uint8_t readEvent();
+	void wakeUpInertialAN();
+
+	void configTap(bool Zdouble = 1, bool Zsingle = 1, bool Ydouble = 1, bool Ysingle = 1, bool Xdouble = 1, bool Xsingle = 1, uint8_t threshold = 10);
+	void autoSleep(uint8_t threshold = 40, uint8_t time = 60);
+
+	void motionSTforum();
+	void setClickAda(uint8_t c = 1, uint8_t clickthresh = 40, uint8_t timelimit = 10, uint8_t timelatency = 20, uint8_t timewindow = 255);
 	
 private:
 	uint8_t I2CAddress;
@@ -141,7 +154,7 @@ private:
 #define LIS3DH_CTRL_REG2              0x21
 #define LIS3DH_CTRL_REG3              0x22
 #define LIS3DH_CTRL_REG4              0x23
-#define LIS3DH_CTRL_REG5              0x24 //not included
+#define LIS3DH_CTRL_REG5              0x24
 #define LIS3DH_CTRL_REG6              0x25
 #define LIS3DH_REFERENCE              0x26
 #define LIS3DH_STATUS_REG2            0x27
@@ -168,5 +181,8 @@ private:
 #define LIS3DH_TIME_LIMIT             0x3B
 #define LIS3DH_TIME_LATENCY           0x3C
 #define LIS3DH_TIME_WINDOW            0x3D
+
+#define LIS3DH_ACT_THS                0x3E
+#define LIS3DH_ACT_DUR                0x3F
 
 #endif // End of __LIS3DH_IMU_H__ definition check

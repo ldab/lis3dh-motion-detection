@@ -191,7 +191,64 @@ status_t LIS3DH::writeRegister(uint8_t offset, uint8_t dataToWrite) {
     returnError = IMU_HW_ERROR;
   }
 
+	_DEBBUG("Write register 0x", offset, " = ", dataToWrite);
 	return returnError;
+
+	delay(100);             // some users reported hangs without delay.
+}
+
+// Read tap (aka: 'click')
+uint8_t LIS3DH::readTap(){
+	uint8_t t;
+	
+	readRegister(&t, LIS3DH_CLICK_SRC); // read
+	return t;
+}
+
+uint8_t LIS3DH::readEvent(){
+	uint8_t t;
+	
+	readRegister(&t, LIS3DH_INT1_SRC);
+	return t;
+}
+
+void LIS3DH::configTap(bool Zdouble, bool Zsingle, bool Ydouble, bool Ysingle, bool Xdouble, bool Xsingle, uint8_t threshold){
+	uint8_t r = 0;
+
+	writeRegister(LIS3DH_CTRL_REG3, 0x80); 				// Tap on INT1
+	readRegister(&r, LIS3DH_CTRL_REG5);
+	writeRegister(LIS3DH_CTRL_REG5, r | 0b1000); 			// latch INT1
+
+	readRegister(&r, LIS3DH_CTRL_REG2);
+	writeRegister(LIS3DH_CTRL_REG2, r | 0x04); 			// Hi pass enable
+
+	writeRegister(LIS3DH_CLICK_CFG, Zdouble << 5 | Zsingle << 4 | Ydouble << 3 | Ysingle << 2 | Xdouble << 1 | Xsingle); //
+	// writeRegister(LIS3DH_CLICK_SRC, 0b00110000); 		// single and double tap enable READ ONLY!
+	writeRegister(LIS3DH_CLICK_THS, 0b01111111 & threshold); 	// pro-latch off
+	writeRegister(LIS3DH_TIME_LIMIT, 0x40); 			// time limit
+	writeRegister(LIS3DH_TIME_WINDOW, 0x40);			// arbitrary
+}
+
+void LIS3DH::autoSleep(uint8_t threshold, uint8_t time){
+	writeRegister(LIS3DH_ACT_THS, threshold);
+	writeRegister(LIS3DH_ACT_DUR, time);
+}
+
+// p. 23 of DOCid1898
+void LIS3DH::wakeUpInertialAN(){
+	status_t returnError = IMU_SUCCESS;
+
+	// basic setup
+	writeRegister(LIS3DH_CTRL_REG1, 0xA7); // Enable, ODR100, XYZ
+	writeRegister(LIS3DH_CTRL_REG2, 0x00); // Hi pass disable
+	writeRegister(LIS3DH_CTRL_REG3, 0x40); // Int to INT1 pad
+	writeRegister(LIS3DH_CTRL_REG4, 0x00); // 2G
+	writeRegister(LIS3DH_CTRL_REG5, 0x08); // latched
+
+	// config INT
+	writeRegister(LIS3DH_INT1_THS, 0x10);		// Threshold 250mg
+	writeRegister(LIS3DH_INT1_DURATION, 0x40);	// Duration [default: 0] MAX 0x40
+	writeRegister(LIS3DH_INT1_CFG, 0b1010);		// XH + YH interrupt
 }
 
 // Read axis acceleration as Float
@@ -334,6 +391,7 @@ void LIS3DH::applySettings( void )
 	_DEBBUG ("LIS3DH_CTRL_REG4: 0x", dataToWrite);
 	writeRegister(LIS3DH_CTRL_REG4, dataToWrite);
 
+	delay(100);
 }
 
 //****************************************************************************//
@@ -345,22 +403,34 @@ void LIS3DH::applySettings( void )
 status_t LIS3DH::intConf(interrupt_t interrupt,
 						event_t moveType, 
 						uint8_t threshold,
-						uint8_t timeDur)
+						uint8_t timeDur,
+						bool polarity)
 {
 	uint8_t dataToWrite = 0;  //Temporary variable
 	status_t returnError = IMU_SUCCESS;
 
+	if ( interrupt == INT_0 ) { // disable INTerrupts and exit
+		writeRegister(LIS3DH_CTRL_REG3, 0x00);
+		returnError = writeRegister(LIS3DH_CTRL_REG6, 0x00);
+		return returnError;
+	}
+
 	uint8_t regToWrite = 0;
-	regToWrite = (interrupt == INT_1) ? LIS3DH_INT1_CFG : LIS3DH_INT2_CFG;
+	regToWrite = (interrupt == INT_1) ? LIS3DH_INT1_CFG : LIS3DH_INT2_CFG; // 0x30 or 0x34
 
 	//Build INT_CFG 0x30 or 0x34
 	//Detect movement or stop
-	if(moveType == 1)	dataToWrite |= 0x0A;
-	else 							dataToWrite |= 0x05;
+	//bike straight  : ZL YH XL
+	//bike fall right: ZL YH XH
+	//bile fall left : ZL YL XH
+	if(moveType == 0)	dataToWrite |= 0x0A; // b1010 phone on table
+	if(moveType == 1)	dataToWrite |= 0x05; // b0101 phone upside down on table
+	if(moveType == 2)	dataToWrite = 0b00000011; // bike fall
+	
 
 	_DEBBUG ("LIS3DH_INT_CFG: 0x", dataToWrite);
 	returnError = writeRegister(regToWrite, dataToWrite);
-	
+
 	//Build INT_THS 0x32 or 0x36
 	regToWrite += 2;
 	returnError = writeRegister(regToWrite, threshold);
@@ -368,10 +438,13 @@ status_t LIS3DH::intConf(interrupt_t interrupt,
 	//Build INT_DURATION 0x33 or 0x37
 	regToWrite++;
 
-	float _seconds = float(timeDur/1.0f/accelSampleRate);
-	_DEBBUG ("Event Duration is: ", _seconds, "sec");
+	//float _seconds = float(timeDur/1.0f/accelSampleRate);
+	//_DEBBUG ("Event Duration is: ", _seconds, "sec");
 
 	returnError = writeRegister(regToWrite, timeDur);
+	
+	readRegister(&dataToWrite, LIS3DH_CTRL_REG5);
+	returnError = writeRegister(LIS3DH_CTRL_REG5, dataToWrite | 0b1000); // latch INT1
 
 	//Attach configuration to Interrupt X
 	if(interrupt == 1)
@@ -382,6 +455,42 @@ status_t LIS3DH::intConf(interrupt_t interrupt,
 	{
 		returnError = writeRegister(LIS3DH_CTRL_REG6, 0x20);
 	}
+
+	// Polarity
+	readRegister(&dataToWrite, LIS3DH_CTRL_REG6);
+	returnError = writeRegister(LIS3DH_CTRL_REG6, dataToWrite | polarity ); //
 	
 	return returnError;
+}
+
+void LIS3DH::setClickAda(uint8_t c, uint8_t clickthresh, uint8_t timelimit, uint8_t timelatency, uint8_t timewindow) {
+  if (!c) {    //disable int    
+	uint8_t r;
+       	readRegister(&r, LIS3DH_CTRL_REG3);
+	r &= ~(0x80); // turn off I1_CLICK    
+	writeRegister(LIS3DH_CTRL_REG3, r);
+	writeRegister(LIS3DH_CLICK_CFG, 0);
+	return;
+}  // else...  
+	writeRegister(LIS3DH_CTRL_REG3, 0x80);			// turn on int1 click  
+	writeRegister(LIS3DH_CTRL_REG5, 0x08);			// latch interrupt on int1  if (c == 1)  
+	writeRegister(LIS3DH_CLICK_CFG, 0x15);			// turn on all axes & singletap  if (c == 2)  
+	writeRegister(LIS3DH_CLICK_CFG, 0x2A);			// turn on all axes & doubletap
+	writeRegister(LIS3DH_CLICK_THS, clickthresh);		// arbitrary
+	writeRegister(LIS3DH_TIME_LIMIT, timelimit);		// arbitrary
+	writeRegister(LIS3DH_TIME_LATENCY, timelatency);	// arbitrary
+	writeRegister(LIS3DH_TIME_WINDOW, timewindow);		// arbitrary
+}
+
+// he needs delays between i2c
+void LIS3DH::motionSTforum(){
+	writeRegister(LIS3DH_CTRL_REG1, 0x27);
+	writeRegister(LIS3DH_CTRL_REG2, 0x01); // Hi-Filter for AOI on INT1
+	writeRegister(LIS3DH_CTRL_REG3, 0x40); // Interrupt driven to INT1 pad,  AOI1 interrupt on INT1.  ---0100
+	writeRegister(LIS3DH_CTRL_REG4, 0x00); // FS = 2g  Full scale selection 
+	
+	writeRegister(LIS3DH_CTRL_REG5, 0x08); //latched  0000 1000 ---0x08 + Disable FIFO temporarily;  0: interrupt request not latched;---0x00
+
+	writeRegister(LIS3DH_INT1_THS, 0x08); // 0010 1010 beyond thresh hold  ; 0001 0101  below thresh hold. event
+	writeRegister(LIS3DH_INT1_CFG, 0x2a); // 0010 1010 enable HIGH events?
 }
