@@ -1,5 +1,5 @@
 {
-    "name": "LIS3DH_motion_detection",
+    "name": "LIS3DH motion detection",
     "version": "0.0.6",
     "description": "Motion detection without bells and whistles, simply works, low power",
     "keywords": "sensors, accelerometer, motion detection, motion detector, low power, mobile, battery, web, cloud, iot, gsm, gprs, gps, gnss",
