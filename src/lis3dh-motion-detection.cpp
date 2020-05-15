@@ -27,7 +27,7 @@ LIS3DH::LIS3DH( uint8_t inputArg )
   I2CAddress = inputArg;
 }
 
-status_t LIS3DH::begin( uint16_t accSample,
+imu_status_t LIS3DH::begin( uint16_t accSample,
 						uint8_t xAcc,
 						uint8_t yAcc,
 						uint8_t zAcc,
@@ -36,7 +36,7 @@ status_t LIS3DH::begin( uint16_t accSample,
 
 	_DEBBUG("Configuring IMU");
 
-	status_t returnError = IMU_SUCCESS;
+	imu_status_t returnError = IMU_SUCCESS;
 
   	Wire.begin();
   
@@ -82,9 +82,9 @@ status_t LIS3DH::begin( uint16_t accSample,
 //    other memory!
 //
 //****************************************************************************//
-status_t LIS3DH::readRegisterRegion(uint8_t *outputPointer , uint8_t offset, uint8_t length)
+imu_status_t LIS3DH::readRegisterRegion(uint8_t *outputPointer , uint8_t offset, uint8_t length)
 {
-	status_t returnError = IMU_SUCCESS;
+	imu_status_t returnError = IMU_SUCCESS;
 
 	//define pointer that will point to the external space
 	uint8_t i = 0;
@@ -122,11 +122,11 @@ status_t LIS3DH::readRegisterRegion(uint8_t *outputPointer , uint8_t offset, uin
 //    offset -- register to read
 //
 //****************************************************************************//
-status_t LIS3DH::readRegister(uint8_t* outputPointer, uint8_t offset) {
+imu_status_t LIS3DH::readRegister(uint8_t* outputPointer, uint8_t offset) {
 	//Return value
 	uint8_t result = 0;
 	uint8_t numBytes = 1;
-	status_t returnError = IMU_SUCCESS;
+	imu_status_t returnError = IMU_SUCCESS;
 
 	Wire.beginTransmission(I2CAddress);
 	Wire.write(offset);
@@ -155,12 +155,12 @@ status_t LIS3DH::readRegister(uint8_t* outputPointer, uint8_t offset) {
 //    offset -- register to read
 //
 //****************************************************************************//
-status_t LIS3DH::readRegisterInt16( int16_t* outputPointer, uint8_t offset )
+imu_status_t LIS3DH::readRegisterInt16( int16_t* outputPointer, uint8_t offset )
 {
 	{
 		//offset |= 0x80; //turn auto-increment bit on
 		uint8_t myBuffer[2];
-		status_t returnError = readRegisterRegion(myBuffer, offset, 2);  //Does memory transfer
+		imu_status_t returnError = readRegisterRegion(myBuffer, offset, 2);  //Does memory transfer
 		int16_t output = (int16_t)myBuffer[0] | int16_t(myBuffer[1] << 8);
 
 		_DEBBUG("12 bit from 0x", offset, " = ", output);
@@ -179,8 +179,8 @@ status_t LIS3DH::readRegisterInt16( int16_t* outputPointer, uint8_t offset )
 //    dataToWrite -- 8 bit data to write to register
 //
 //****************************************************************************//
-status_t LIS3DH::writeRegister(uint8_t offset, uint8_t dataToWrite) {
-	status_t returnError = IMU_SUCCESS;
+imu_status_t LIS3DH::writeRegister(uint8_t offset, uint8_t dataToWrite) {
+	imu_status_t returnError = IMU_SUCCESS;
 
   //Write the byte
   Wire.beginTransmission(I2CAddress);
@@ -245,6 +245,13 @@ float LIS3DH::axisAccel( axis_t _axis)
 
 	return outFloat;
 
+}
+
+	// Set the IMU to Power-down mode ~ 0.5uA;
+imu_status_t LIS3DH::imu_power_down( void )
+{
+	// ODR[3:0] -> (0000: power-down mode; others: Refer to Table 31: Data rate configuration)
+	return writeRegister(LIS3DH_CTRL_REG1, 0x00);
 }
 
 //****************************************************************************//
@@ -342,13 +349,14 @@ void LIS3DH::applySettings( void )
 //	Durationsteps and maximum values depend on the ODR chosen.
 //
 //****************************************************************************//
-status_t LIS3DH::intConf(interrupt_t interrupt,
+imu_status_t LIS3DH::intConf(interrupt_t interrupt,
 						event_t moveType, 
 						uint8_t threshold,
-						uint8_t timeDur)
+						uint8_t timeDur,
+						bool		polarity )
 {
 	uint8_t dataToWrite = 0;  //Temporary variable
-	status_t returnError = IMU_SUCCESS;
+	imu_status_t returnError = IMU_SUCCESS;
 
 	uint8_t regToWrite = 0;
 	regToWrite = (interrupt == INT_1) ? LIS3DH_INT1_CFG : LIS3DH_INT2_CFG;
@@ -368,10 +376,9 @@ status_t LIS3DH::intConf(interrupt_t interrupt,
 	//Build INT_DURATION 0x33 or 0x37
 	regToWrite++;
 
-	float _seconds = float(timeDur/1.0f/accelSampleRate);
-	_DEBBUG ("Event Duration is: ", _seconds, "sec");
-
 	returnError = writeRegister(regToWrite, timeDur);
+
+	dataToWrite = 0 | (polarity << 1);
 
 	//Attach configuration to Interrupt X
 	if(interrupt == 1)
@@ -380,8 +387,10 @@ status_t LIS3DH::intConf(interrupt_t interrupt,
 	}
 	else
 	{
-		returnError = writeRegister(LIS3DH_CTRL_REG6, 0x20);
+		dataToWrite |= 0x20;
 	}
+
+	returnError = writeRegister(LIS3DH_CTRL_REG6, dataToWrite);
 	
 	return returnError;
 }

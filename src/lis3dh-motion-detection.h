@@ -62,7 +62,7 @@ typedef enum
 	IMU_OUT_OF_BOUNDS,
 	IMU_ALL_ONES_WARNING,
 	//...
-} status_t;
+} imu_status_t;
 
 typedef enum
 {
@@ -89,7 +89,7 @@ class LIS3DH
 public:
 	LIS3DH( uint8_t );
 	
-	status_t begin( uint16_t accSample,
+	imu_status_t begin( uint16_t accSample,
 					uint8_t xAcc,
 					uint8_t yAcc,
 					uint8_t zAcc,
@@ -98,24 +98,28 @@ public:
 	// The following utilities read and write to the IMU
 
 	// readRegister reads one 8-bit register
-	status_t readRegister(uint8_t* outputPointer, uint8_t offset);
+	imu_status_t readRegister(uint8_t* outputPointer, uint8_t offset);
 	
 	// Reads two 8-bit regs, LSByte then MSByte order, and concatenates them.
 	// Acts as a 16-bit read operation
-	status_t readRegisterInt16(int16_t*, uint8_t offset );
+	imu_status_t readRegisterInt16(int16_t*, uint8_t offset );
 	
 	// Writes an 8-bit byte;
-	status_t writeRegister(uint8_t, uint8_t);
+	imu_status_t writeRegister(uint8_t, uint8_t);
 
 	// Configure Interrupts
 	// INT1 or 2, Move or Stop, Detection Sensivity and duration cycles = from 1 to 127
-	status_t intConf(interrupt_t interrupt,
+	imu_status_t intConf(interrupt_t interrupt,
 					event_t moveType, 
 					uint8_t threshold,
-					uint8_t timeDur);
+					uint8_t timeDur,
+					bool 		polarity = 0);
 	
 	// Read axis acceleration as Float
 	float axisAccel( axis_t _axis);
+
+	// Set the IMU to Power-down mode ~ 0.5uA;
+	imu_status_t imu_power_down( void );
 	
 private:
 	uint8_t I2CAddress;
@@ -123,14 +127,14 @@ private:
 	uint8_t xAccelEnabled;
 	uint8_t yAccelEnabled;
 	uint8_t zAccelEnabled;
-	uint8_t accelRange; //Accelerometer range = 2, 4, 8, 16g
+	uint8_t accelRange; 			//Accelerometer range = 2, 4, 8, 16g
 
 	//Apply settings at .begin()
 	void applySettings( void );
 
 	//ReadRegisterRegion takes a uint8 array address as input and reads
 	//  a chunk of memory into that array.
-	status_t readRegisterRegion(uint8_t*, uint8_t, uint8_t );
+	imu_status_t readRegisterRegion(uint8_t*, uint8_t, uint8_t );
 };
 
 //Device Registers

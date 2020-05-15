@@ -49,7 +49,7 @@ void setup() {
   //chosen above, change it and test accordingly to your application
   //Duration = timeDur x Seconds / sampleRate
   myIMU.intConf(INT_1, DET_MOVE, 13, 2);
-  myIMU.intConf(INT_2, DET_STOP, 13, 10);
+  myIMU.intConf(INT_2, DET_STOP, 13, 10, 1);  // also change the polarity to active-low, this will change both Interrupts behavior
 
   uint8_t readData = 0;
 
