@@ -117,6 +117,16 @@ public:
 	
 	// Read axis acceleration as Float
 	float axisAccel( axis_t _axis);
+	uint8_t readClick();
+	uint8_t readAxisEvents();
+
+	// timeLimit is 7bit
+	void clickConf (bool Zdouble = 1, bool Zsingle = 1, bool Ydouble = 1, bool Ysingle = 1,
+		       	bool Xdouble = 1, bool Xsingle = 1, uint8_t threshold = 10,
+			uint8_t timeLimit = 64, uint8_t latency = 64, uint8_t timeWindow = 64,
+			uint8_t interrupt = 1);
+
+	void autoSleep(uint8_t threshold = 40, uint8_t time = 60);
 
 	// Set the IMU to Power-down mode ~ 0.5uA;
 	imu_status_t imu_power_down( void );
@@ -172,5 +182,10 @@ private:
 #define LIS3DH_TIME_LIMIT             0x3B
 #define LIS3DH_TIME_LATENCY           0x3C
 #define LIS3DH_TIME_WINDOW            0x3D
+
+#define LIS3DH_ACT_THS                0x3E
+#define LIS3DH_ACT_DUR                0x3F
+
+#define LIS3DH_TEMP_CFG_REG           0x1F
 
 #endif // End of __LIS3DH_IMU_H__ definition check
