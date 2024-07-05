@@ -424,24 +424,24 @@ void LIS3DH::clickConf(bool Zdouble, bool Zsingle, bool Ydouble, bool Ysingle,
 	uint8_t rb = 0;
 
 	readRegister(&r,  LIS3DH_CTRL_REG3);
-	readRegister(&rb, LIS3DH_CTRL_REG5);
+	readRegister(&rb, LIS3DH_CTRL_REG6);
 	switch (interrupt)
 	{
 		case 0:
 		writeRegister(LIS3DH_CTRL_REG3, r  & ~0x80); 			// No click on INT1
-		writeRegister(LIS3DH_CTRL_REG5, rb & ~0x80); 			// No click on INT2
+		writeRegister(LIS3DH_CTRL_REG6, rb & ~0x80); 			// No click on INT2
 		break;
 		case 1:
 		writeRegister(LIS3DH_CTRL_REG3, r  | 0x80); 			// Click on INT1
-		writeRegister(LIS3DH_CTRL_REG5, rb & ~0x80); 			// No click on INT2
+		writeRegister(LIS3DH_CTRL_REG6, rb & ~0x80); 			// No click on INT2
 		break;
 		case 2:
 		writeRegister(LIS3DH_CTRL_REG3, r  & ~0x80); 			// No click on INT1
-		writeRegister(LIS3DH_CTRL_REG5, rb | 0x80); 			// Click on INT2
+		writeRegister(LIS3DH_CTRL_REG6, rb | 0x80); 			// Click on INT2
 		break;
 		case 3:
 		writeRegister(LIS3DH_CTRL_REG3, r  | 0x80); 			// Click on INT1
-		writeRegister(LIS3DH_CTRL_REG5, rb | 0x80); 			// Click on INT2
+		writeRegister(LIS3DH_CTRL_REG6, rb | 0x80); 			// Click on INT2
 		break;
 	}
 
