@@ -394,3 +394,69 @@ imu_status_t LIS3DH::intConf(interrupt_t interrupt,
 	
 	return returnError;
 }
+
+// Read click. Register is cleared by reading.
+uint8_t LIS3DH::readClick(){
+	uint8_t t;
+	
+	readRegister(&t, LIS3DH_CLICK_SRC);
+	return t;
+}
+
+// read events for ZYX axis
+// bit 6 is active if an event generated
+// [5:0] are active for ZH, ZL, YH, YL, XH, XL events
+uint8_t LIS3DH::readAxisEvents(){
+	uint8_t t;
+	
+	readRegister(&t, LIS3DH_INT1_SRC);
+	return t;
+}
+
+// configure click recognition.
+// timeLimit is 7bit
+void LIS3DH::clickConf(bool Zdouble, bool Zsingle, bool Ydouble, bool Ysingle,
+	       	bool Xdouble, bool Xsingle,
+		uint8_t threshold, uint8_t timeLimit, uint8_t latency,
+		uint8_t timeWindow, uint8_t interrupt){
+
+	uint8_t r  = 0;
+	uint8_t rb = 0;
+
+	readRegister(&r,  LIS3DH_CTRL_REG3);
+	readRegister(&rb, LIS3DH_CTRL_REG6);
+	switch (interrupt)
+	{
+		case 0:
+		writeRegister(LIS3DH_CTRL_REG3, r  & ~0x80); 			// No click on INT1
+		writeRegister(LIS3DH_CTRL_REG6, rb & ~0x80); 			// No click on INT2
+		break;
+		case 1:
+		writeRegister(LIS3DH_CTRL_REG3, r  | 0x80); 			// Click on INT1
+		writeRegister(LIS3DH_CTRL_REG6, rb & ~0x80); 			// No click on INT2
+		break;
+		case 2:
+		writeRegister(LIS3DH_CTRL_REG3, r  & ~0x80); 			// No click on INT1
+		writeRegister(LIS3DH_CTRL_REG6, rb | 0x80); 			// Click on INT2
+		break;
+		case 3:
+		writeRegister(LIS3DH_CTRL_REG3, r  | 0x80); 			// Click on INT1
+		writeRegister(LIS3DH_CTRL_REG6, rb | 0x80); 			// Click on INT2
+		break;
+	}
+
+	readRegister(&r, LIS3DH_CTRL_REG2);
+	writeRegister(LIS3DH_CTRL_REG2, r | 0x04); 			// Hi pass enable
+
+	writeRegister(LIS3DH_CLICK_CFG, Zdouble << 5 | Zsingle << 4 | Ydouble << 3 | Ysingle << 2 | Xdouble << 1 | Xsingle); //
+	writeRegister(LIS3DH_CLICK_THS, 0b10000000 | threshold); 	// pro-latch on
+	writeRegister(LIS3DH_TIME_LIMIT, timeLimit); 			// time limit
+	writeRegister(LIS3DH_TIME_LATENCY, latency); 			// latency for the latch to be on
+	writeRegister(LIS3DH_TIME_WINDOW, timeWindow);
+}
+
+// Enable autoSleep
+void LIS3DH::autoSleep(uint8_t threshold, uint8_t time){
+	writeRegister(LIS3DH_ACT_THS, threshold);
+	writeRegister(LIS3DH_ACT_DUR, time);
+}
