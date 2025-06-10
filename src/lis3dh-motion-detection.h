@@ -15,6 +15,12 @@ Distributed as-is; no warranty is given.
 #ifndef __LIS3DH_IMU_H__
 #define __LIS3DH_IMU_H__
 
+// Temperature works only if I define LOW_POWER here (!).
+// Tested with arduino, not with platformio
+#if !defined LOW_POWER & !defined NORMAL_MODE & !defined HIGH_RESOLUTION
+#define LOW_POWER
+#endif
+
 #include "stdint.h"
 
 #if defined(ARDUINO) && ARDUINO >= 100
@@ -119,6 +125,13 @@ public:
 	float axisAccel( axis_t _axis);
 	uint8_t readClick();
 	uint8_t readAxisEvents();
+	#ifdef LOW_POWER
+	int8_t  readTemperature();
+	#else
+	int16_t readTemperature();
+	#endif
+
+	void temperatureEnable(bool command);
 
 	// timeLimit is 7bit
 	void clickConf (bool Zdouble = 1, bool Zsingle = 1, bool Ydouble = 1, bool Ysingle = 1,
@@ -130,6 +143,7 @@ public:
 
 	// Set the IMU to Power-down mode ~ 0.5uA;
 	imu_status_t imu_power_down( void );
+	void disconnectPullUp(bool command);
 	
 private:
 	uint8_t I2CAddress;
@@ -151,6 +165,7 @@ private:
 #define LIS3DH_STATUS_REG_AUX         0x07
 #define LIS3DH_WHO_AM_I               0x0F
 
+#define LIS3DH_CTRL_REG0              0x1E
 #define LIS3DH_CTRL_REG1              0x20
 #define LIS3DH_CTRL_REG2              0x21
 #define LIS3DH_CTRL_REG3              0x22
@@ -187,5 +202,12 @@ private:
 #define LIS3DH_ACT_DUR                0x3F
 
 #define LIS3DH_TEMP_CFG_REG           0x1F
+
+#define LIS3DH_OUT_ADC1_L		0x08
+#define LIS3DH_OUT_ADC1_H		0x09
+#define LIS3DH_OUT_ADC2_L		0x0A
+#define LIS3DH_OUT_ADC2_H		0x0B
+#define LIS3DH_OUT_ADC3_L		0x0C
+#define LIS3DH_OUT_ADC3_H		0x0D
 
 #endif // End of __LIS3DH_IMU_H__ definition check
