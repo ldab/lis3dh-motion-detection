@@ -460,3 +460,70 @@ void LIS3DH::autoSleep(uint8_t threshold, uint8_t time){
 	writeRegister(LIS3DH_ACT_THS, threshold);
 	writeRegister(LIS3DH_ACT_DUR, time);
 }
+
+// enable temperature reading.
+void LIS3DH::temperatureEnable(bool command){
+
+	uint8_t r;
+	
+	applySettings(); // need to re-apply settings, otherwise temperature 
+			 // is reported always the same.
+
+	if ( command == 1 ) {
+		// enable _relative_ temperature reading to *unknown* reference
+		writeRegister(LIS3DH_TEMP_CFG_REG, 0b11000000);
+
+		// we also need to enable BDU
+		readRegister(&r, LIS3DH_CTRL_REG4);
+		writeRegister(LIS3DH_CTRL_REG4, r | 0x80);
+	} else { // DISABLING
+		writeRegister(LIS3DH_TEMP_CFG_REG, 0b00000000);
+
+		// disable BDU
+		readRegister(&r, LIS3DH_CTRL_REG4);
+		writeRegister(LIS3DH_CTRL_REG4, r | 0x00);
+	}
+}
+
+// Only in low power we have 8bit. Otherwise 10bit
+#ifdef LOW_POWER
+int8_t  LIS3DH::readTemperature(){
+	uint8_t r;
+
+	temperatureEnable(1);		// Although temperature is enabled, it must
+					// re-run to re-apply settings. Otherwise
+					// the temperature report is always the same.
+	
+	// do we have data?
+	readRegister(&r, LIS3DH_STATUS_REG_AUX);
+	if ( ( r & 0x04 ) == 0x04 ) {
+		readRegister(&r, LIS3DH_OUT_ADC3_H); // here are the data
+		return (int8_t) r;
+	}
+	// we don't have data. Return deep freezing for error.
+	return 0xFF;
+}
+#else
+// 10 bit value, UNTESTED
+int16_t LIS3DH::readTemperature(){
+	int16_t r;
+	
+	temperatureEnable(1);		// Read comment above
+
+	// do we have data?
+	readRegisterInt16(&r, LIS3DH_STATUS_REG_AUX);
+	if ( ( r & 0x04 ) == 0x04 ) {
+		readRegisterInt16(&r, LIS3DH_OUT_ADC3_L);
+		return (int16_t) r;
+	}
+	// we don't have data. Return deep freezing for error.
+	return 0xFFFF;
+}
+#endif
+
+// disconnect pullup on SDO/SA for lower power consumption
+void LIS3DH::disconnectPullUp(bool command){
+	uint8_t r;
+	readRegister(&r, LIS3DH_CTRL_REG0);			// don't mess with this register.
+	writeRegister(LIS3DH_CTRL_REG0, r | command << 7);	// 1 to disconnect.
+}
