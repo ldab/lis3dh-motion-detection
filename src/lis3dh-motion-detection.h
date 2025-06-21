@@ -15,12 +15,6 @@ Distributed as-is; no warranty is given.
 #ifndef __LIS3DH_IMU_H__
 #define __LIS3DH_IMU_H__
 
-// Temperature works only if I define LOW_POWER here (!).
-// Tested with arduino, not with platformio
-#if !defined LOW_POWER & !defined NORMAL_MODE & !defined HIGH_RESOLUTION
-#define LOW_POWER
-#endif
-
 #include "stdint.h"
 
 #if defined(ARDUINO) && ARDUINO >= 100
@@ -125,11 +119,7 @@ public:
 	float axisAccel( axis_t _axis);
 	uint8_t readClick();
 	uint8_t readAxisEvents();
-	#ifdef LOW_POWER
 	int8_t  readTemperature();
-	#else
-	int16_t readTemperature();
-	#endif
 
 	void temperatureEnable(bool command);
 
@@ -170,7 +160,7 @@ private:
 #define LIS3DH_CTRL_REG2              0x21
 #define LIS3DH_CTRL_REG3              0x22
 #define LIS3DH_CTRL_REG4              0x23
-#define LIS3DH_CTRL_REG5              0x24 //not included
+#define LIS3DH_CTRL_REG5              0x24
 #define LIS3DH_CTRL_REG6              0x25
 #define LIS3DH_REFERENCE              0x26
 #define LIS3DH_STATUS_REG2            0x27

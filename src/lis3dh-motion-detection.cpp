@@ -99,7 +99,7 @@ imu_status_t LIS3DH::readRegisterRegion(uint8_t *outputPointer , uint8_t offset,
   }
   else  //OK, all worked, keep going
   {
-    // request 6 bytes from slave device
+    // request length bytes from slave device
     Wire.requestFrom(I2CAddress, length);
     while ( (Wire.available()) && (i < length))  // slave may send less than requested
     {
@@ -158,7 +158,6 @@ imu_status_t LIS3DH::readRegister(uint8_t* outputPointer, uint8_t offset) {
 imu_status_t LIS3DH::readRegisterInt16( int16_t* outputPointer, uint8_t offset )
 {
 	{
-		//offset |= 0x80; //turn auto-increment bit on
 		uint8_t myBuffer[2];
 		imu_status_t returnError = readRegisterRegion(myBuffer, offset, 2);  //Does memory transfer
 		int16_t output = (int16_t)myBuffer[0] | int16_t(myBuffer[1] << 8);
@@ -485,8 +484,7 @@ void LIS3DH::temperatureEnable(bool command){
 	}
 }
 
-// Only in low power we have 8bit. Otherwise 10bit
-#ifdef LOW_POWER
+// 8bits in all modes
 int8_t  LIS3DH::readTemperature(){
 	uint8_t r;
 
@@ -494,8 +492,8 @@ int8_t  LIS3DH::readTemperature(){
 					// re-run to re-apply settings. Otherwise
 					// the temperature report is always the same.
 	
-	// do we have data?
 	readRegister(&r, LIS3DH_STATUS_REG_AUX);
+	// check if we have data
 	if ( ( r & 0x04 ) == 0x04 ) {
 		readRegister(&r, LIS3DH_OUT_ADC3_H); // here are the data
 		return (int8_t) r;
@@ -503,23 +501,6 @@ int8_t  LIS3DH::readTemperature(){
 	// we don't have data. Return deep freezing for error.
 	return 0xFF;
 }
-#else
-// 10 bit value, UNTESTED
-int16_t LIS3DH::readTemperature(){
-	int16_t r;
-	
-	temperatureEnable(1);		// Read comment above
-
-	// do we have data?
-	readRegisterInt16(&r, LIS3DH_STATUS_REG_AUX);
-	if ( ( r & 0x04 ) == 0x04 ) {
-		readRegisterInt16(&r, LIS3DH_OUT_ADC3_L);
-		return (int16_t) r;
-	}
-	// we don't have data. Return deep freezing for error.
-	return 0xFFFF;
-}
-#endif
 
 // disconnect pullup on SDO/SA for lower power consumption
 void LIS3DH::disconnectPullUp(bool command){

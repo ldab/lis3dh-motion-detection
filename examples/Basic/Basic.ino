@@ -105,17 +105,7 @@ void loop()
 
   // Read temperature - need to calibrate.
   Serial.print(" Temperature = ");
-  #ifdef LOW_POWER
   Serial.println( tempCalibrate + (int8_t) myIMU.readTemperature());
-  #else
-  int16_t tempTemp;
-  tempTemp = (int16_t) myIMU.readTemperature();
-  Serial.println( tempTemp + tempCalibrate );
-  Serial.print("BIN : ");
-  Serial.print( tempTemp & 0xFF, BIN);
-  Serial.print("\t");
-  Serial.println( tempTemp >> 8, BIN);
-  #endif
 
   delay(3000); // every second temperature is sometimes erratic.
 
